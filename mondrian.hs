@@ -102,8 +102,8 @@ mondrian x y w h (r:s:t:rs)
     right_w = w - vSplitPt
     top_h = hSplitPt - h
     bottom_h = h - hSplitPt
-    (ul_rest, ul) = mondrian x y left_w top_h rs
-    (ur_rest, ur) = mondrian vSplitPt y right_w top_h ul_rest
+    (ul_rest, ul) = mondrian x y vSplitPt hSplitPt rs
+    (ur_rest, ur) = mondrian vSplitPt y right_w hSplitPt ul_rest
     (bl_rest, bl) = mondrian x hSplitPt left_w bottom_h ur_rest
     (br_rest, br) = mondrian vSplitPt hSplitPt right_w bottom_h bl_rest
    
@@ -116,8 +116,11 @@ mondrian x y w h (r:s:t:rs)
 -- r:rs a list of random floats
 goodSplit :: Int -> [Float] -> (Bool, [Float])
 goodSplit region (r:rs)
-  | randomInt 120 (fromIntegral region * 1.5) r < region = (True, rs)
+  | randInt < region = (True, rs)
   | otherwise = (False, rs)
+  where 
+    high = round (1.5 * (fromIntegral (region)) )
+    randInt = randomInt 120 high r
 
 
 
@@ -133,23 +136,18 @@ vSplit x w (r:rs)
   | randomPosition > lowerBound && randomPosition < upperBound = (randomPosition, rs)
   | otherwise = vSplit x w rs -- recursively calls until a valid position is found
   where 
-    randomPosition = randomInt 120 (fromIntegral(w) * 1.5) r
-    regionLength = w - x
-    lowerBound = fromIntegral regionLength * 0.33
-    upperBound = fromIntegral regionLength * 0.67
+    randomPosition = randomInt 120 (round (fromIntegral w * 1.5)) r
+    lowerBound = round (fromIntegral (w-x) * 0.33)
+    upperBound = round (fromIntegral (w-x) * 0.67)
 
 hSplit :: Int -> Int -> [Float] -> (Int, [Float])
 hSplit y h (r:rs)
   | randomPosition > lowerBound && randomPosition < upperBound = (randomPosition, rs)
   | otherwise = hSplit y h rs -- recursively calls until a valid position is found
-  where
-    high = toInteger (fromIntegral h * 1.5)
-    randomPosition = randomInt 120 high r
-    regionLength = h - y
-    lowerBound = fromIntegral regionLength * 0.33
-    upperBound = fromIntegral regionLength * 0.67
-
-
+  where 
+    randomPosition = randomInt 120 (round (fromIntegral h * 1.5)) r
+    lowerBound = round (fromIntegral (h-y) * 0.33)
+    upperBound = round (fromIntegral (h-y) * 0.67)
 
 --
 -- The main program which generates and outputs mondrian.html.
