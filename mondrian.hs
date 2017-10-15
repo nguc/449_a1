@@ -22,7 +22,7 @@ height = 768
 -- 0 and 1.  (Increase the 20000 if you ever run out of random values).
 -- 
 randomList :: Int -> [Float]
-randomList seed = take 20000 (rl_helper (mkStdGen seed))
+randomList seed = take 200000 (rl_helper (mkStdGen seed))
 
 rl_helper :: StdGen -> [Float]
 rl_helper g = fst vg : rl_helper (snd vg)
@@ -48,30 +48,16 @@ randomInt low high x = round ((fromIntegral (high - low) * x) + fromIntegral low
 -- Returns:
 --   [Float]: The remaining, unused random values
 --   String: The SVG tags that draw the image
---
-{-| mondrian :: Int -> Int -> Int -> Int -> [Float] -> ([Float], String)
-mondrian x y w h (r:s:t:rs) = 
-  (rs, "<rect x=" ++ (show x) ++ 
-       " y=" ++ (show y) ++ 
-       " width=" ++ (show w) ++ 
-       " height=" ++ (show h) ++ 
-       " stroke=\"None\"" ++
-       " fill=\"rgb(" ++ (show (round (r * 255))) ++ "," ++
-                         (show (round (s * 255))) ++ "," ++
-                         (show (round (t * 255))) ++ ")\" />\n")
-  -}
-
 mondrian :: Int -> Int -> Int -> Int -> [Float] -> ([Float], String)
 mondrian x y w h (r:s:t:rs)
   -- cut both directions make 4 regions
-  | w > half_Inital_Width && h > half_Initial_Height = 
-      (br_rest, ul ++ ur ++ bl ++ br)
+  | w > half_Inital_Width && h > half_Initial_Height = (br_rest, ul ++ ur ++ bl ++ br)
 
   -- cut vertically make 2 regions
-  -- | w > half_Inital_Width
+  | w > half_Inital_Width = (left_rest, left ++ right)
 
   -- cut horizontally only 2 regions
-  -- | h > half_Initial_Height
+  | h > half_Initial_Height = (bottom_rest, top ++ bottom)
   
   -- cut both directions if legal split spots chosen 4 regions
   -- | w > 120 && h > 120 && hGood && vGood
@@ -106,6 +92,10 @@ mondrian x y w h (r:s:t:rs)
     (ur_rest, ur) = mondrian vSplitPt y right_w hSplitPt ul_rest
     (bl_rest, bl) = mondrian x hSplitPt left_w bottom_h ur_rest
     (br_rest, br) = mondrian vSplitPt hSplitPt right_w bottom_h bl_rest
+    (left_rest, left) = mondrian x y vSplitPt h rs
+    (right_rest, right) = mondrian vSplitPt y right_w h left_rest
+    (top_rest, top) = mondrian x y w hSplitPt rs
+    (bottom_rest, bottom) = mondrian x hSplitPt w bottom_h top_rest
    
 
 
@@ -133,12 +123,14 @@ goodSplit region (r:rs)
 --  an int for the random split point and the rest of the random float list 
 vSplit :: Int -> Int -> [Float] -> (Int, [Float])
 vSplit x w (r:rs)
+  | null [r] = (0, [])
   | randomPosition > lowerBound && randomPosition < upperBound = (randomPosition, rs)
   | otherwise = vSplit x w rs -- recursively calls until a valid position is found
   where 
     randomPosition = randomInt 120 (round (fromIntegral w * 1.5)) r
     lowerBound = round (fromIntegral (w-x) * 0.33)
     upperBound = round (fromIntegral (w-x) * 0.67)
+
 
 hSplit :: Int -> Int -> [Float] -> (Int, [Float])
 hSplit y h (r:rs)
