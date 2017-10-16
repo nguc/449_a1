@@ -54,19 +54,19 @@ mondrian x y w h (r:s:t:rs)
   | w > half_Inital_Width && h > half_Initial_Height = (br_rest, ul_tags ++ ur_tags ++ bl_tags ++ br_tags)
 
   -- cut vertically make 2 regions
-  | w > half_Inital_Width = (right_rest, left ++ right)
+  | w > half_Inital_Width = (r_rest, left ++ right)
 
   -- cut horizontally only 2 regions
   | h > half_Initial_Height = (bottom_rest, top ++ bottom)
   
   -- cut both directions if legal split spots chosen 4 regions
-  -- | w > 120 && h > 120 && hGood == True && vGood == True = (br_rest, ul ++ ur ++ bl ++ br)
+  | w > 120 && h > 120 && hGood == True && vGood == True = (br_rest, ul_tags ++ ur_tags ++ bl_tags ++ br_tags)
 
   -- cut vertically 2 regions
-  -- | w > 120 && vGood == True = (right_rest, left ++ right)
+  | w > 120 && vGood == True = (r_rest, left ++ right)
 
   -- cut horizontally 2 regions
-  -- | h > 120 && hGood== True = (bottom_rest, top ++ bottom)
+  | h > 120 && hGood== True = (bottom_rest, top ++ bottom)
 
   | otherwise = 
       (rs, "<rect x=" ++ (show x) ++ 
@@ -84,14 +84,6 @@ mondrian x y w h (r:s:t:rs)
     -- check if area should be split
     (hGood, hrs_rest) = (goodSplit w rs)
     (vGood, vrs_rest) = (goodSplit h hrs_rest)
-    -- find position region should be split
-    vSplitPt = (vSplit x w (head rs) )
-    hSplitPt = (hSplit y h (head rs) )
-    -- width and height of each region
-    left_w = vSplitPt - x
-    right_w = w - vSplitPt
-    top_h = hSplitPt - h
-    bottom_h = h - hSplitPt
     -- cut vertically and horizontally
     (vPos, hPos, rest) = twoSplit x y w h rs
     (ul_rest, ul_tags) = mondrian x y vPos hPos rest
@@ -99,16 +91,15 @@ mondrian x y w h (r:s:t:rs)
     (bl_rest, bl_tags) = mondrian x h vPos (h-hPos) ur_rest
     (br_rest, br_tags) = mondrian vPos hPos (w-vPos) (h-hPos) bl_rest
     -- cut vertically to get L and R halves
-    left = mondrian x y vSplitPt h (head rs)
-    right = mondrian vSplitPt y right_w h (head rs)
+    (vSplitPt, vs_rest) = vSplit x w rs
+    (l_rest, left) = mondrian x y vSplitPt h vs_rest
+    (r_rest, right) = mondrian vSplitPt y (w-vSplitPt) h l_rest
     -- cut horizontally to get T and B halves
-    (top_rest, top) = mondrian x y w hSplitPt (head rs)
-    (bottom_rest, bottom) = mondrian x hSplitPt w (h-hSplitPt) (head rs)
+    (hSplitPt, hs_rest) = hSplit y h rs 
+    (top_rest, top) = mondrian x y w hPos hs_rest
+    (bottom_rest, bottom) = mondrian x hPos w (h-hSplitPt) top_rest
    
 
-
-
-------------------------Added code ------------------------------------
 -- Returns a boolean to determine if region should be split
 -- region = the w or h of region depending on split direction
 -- r:rs a list of random floats
@@ -121,7 +112,6 @@ goodSplit region (r:rs)
     randInt = randomInt 120 high r
 
 
-
 -- Randomly selects a position between 33% and 67% of the region to split 
 -- Parameters:
 -- x coord
@@ -129,11 +119,12 @@ goodSplit region (r:rs)
 -- r:rs random float list
 -- Return: 
 --  an int for the random split point and the rest of the random float list 
-vSplit :: Int -> Int -> Float -> Int
-vSplit x w r =  (randomInt lowerBound (round (fromIntegral upperBound * 1.5)) r,rs)
+vSplit :: Int -> Int -> [Float] -> (Int, [Float])
+vSplit x w (r:rs) =  (randomInt lowerBound (round (fromIntegral upperBound * 1.5)) r, rs)
   where
     lowerBound = round (fromIntegral (w-x) * 0.33)
     upperBound = round (fromIntegral (w-x) * 0.67)
+
 
 -- Randomly selects a position between 33% and 67% of the region to split 
 -- Parameters:
@@ -142,11 +133,12 @@ vSplit x w r =  (randomInt lowerBound (round (fromIntegral upperBound * 1.5)) r,
 -- r:rs random float list
 -- Return: 
 --  an int for the random split point and the rest of the random float list 
-hSplit :: Int -> Int -> Float -> Int
-hSplit y h r = (randomInt lowerBound (round (fromIntegral upperBound * 1.5)) r, rs)
+hSplit :: Int -> Int -> [Float] -> (Int, [Float])
+hSplit y h (r:rs) = (randomInt lowerBound (round (fromIntegral upperBound * 1.5)) r, rs)
   where 
     lowerBound = round (fromIntegral (h-y) * 0.33)
     upperBound = round (fromIntegral (h-y) * 0.67)
+
 
 -- split into 4 regions
 -- Params:
@@ -157,11 +149,11 @@ hSplit y h r = (randomInt lowerBound (round (fromIntegral upperBound * 1.5)) r, 
 -- [x, y, w, h] a list of tuples contianing x y w h for each region
 -- [rs] list of remianing random floats
 twoSplit :: Int -> Int -> Int -> Int -> [Float] -> (Int, Int, [Float])
-twoSplit x y w h (r:s:rs) = (vPt, hPt, rs)
+twoSplit x y w h rs = (vPt, hPt, hp_rest)
   where 
-    vPt = vSplit x w r
-    hPt = hSplit y h s
-    -- splitPoints = [vPt] : [hPt]
+    (vPt, vp_rest) = vSplit x w rs
+    (hPt, hp_rest) = hSplit y h vp_rest
+    
 
 
 -- The main program which generates and outputs mondrian.html.
