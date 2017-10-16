@@ -91,7 +91,7 @@ mondrian x y w h (r:s:t:rs)
     (r_rest, right) = mondrian sPointV y ((x+w)-sPointV) h l_rest
     -- cut horizontally to get T and B halves
     (sPointH, hs_rest) = splitPosition y h rs
-    (t_rest, top) = mondrian x y w (sPointH-h) hs_rest
+    (t_rest, top) = mondrian x y w (sPointH-y) hs_rest
     (b_rest, bottom) = mondrian x sPointH w ((y+h)-sPointH) t_rest
     -- code for last 3 checks
     -- check if area should be split
@@ -109,7 +109,7 @@ mondrian x y w h (r:s:t:rs)
     (r_rest2, right2) = mondrian sPointV2 y ((x+w)-sPointV2) h l_rest2
     -- cut horizontally to get T and B halves
     (sPointH2, hs_rest2) = splitPosition y h hrs_rest
-    (t_rest2, top2) = mondrian x y w (sPointH2-h) hs_rest2
+    (t_rest2, top2) = mondrian x y w (sPointH2-y) hs_rest2
     (b_rest2, bottom2) = mondrian x sPointH2 w ((y+h)-sPointH2) t_rest2
     
 
@@ -138,7 +138,7 @@ splitPosition iCoord size (r:rs) =  (randomInt lowerBound upperBound r, rs)
   where
     third = round (fromIntegral (size) * 0.33)
     lowerBound = iCoord + third
-    upperBound = (iCoord + size) - third
+    upperBound = iCoord + (2 * third)
 
 -- split into 4 regions
 -- Params:
@@ -156,10 +156,17 @@ twoSplit x y w h rs = (vPt, hPt, h_list)
 
 colour :: Float -> Float -> Float -> String
 colour r g b
+  | r < 0.0833 = "255,0,0" -- red
+  | r < 0.1667 = "135,206,250" -- sky blue
+  | r < 0.25 = "255,255,0" -- yellow
+  | otherwise = "255,255,255"
+  
+{-
   | r > g && r > b = show (round (r*255)) ++ ",0,0"
   | g > r && g > b = show (round (g*255)) ++ "," ++show (round (g*255)) ++ ",0"
   | b > r && b > g = "0,0," ++ show (round (b*255))
-  | otherwise = "0,0,0"
+  | otherwise = "255,255,255"
+-}
 
 
 
