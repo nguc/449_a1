@@ -87,17 +87,17 @@ mondrian x y w h (r:s:t:rs)
     -- cut vertically and horizontally
     (vPos, hPos, rest) = twoSplit x y w h rs
     (ul_rest, ul_tags) = mondrian x y vPos hPos rest
-    (ur_rest, ur_tags) = mondrian vPos y (w-vPos) hPos ul_rest
-    (bl_rest, bl_tags) = mondrian x h vPos (h-hPos) ur_rest
-    (br_rest, br_tags) = mondrian vPos hPos (w-vPos) (h-hPos) bl_rest
+    (ur_rest, ur_tags) = mondrian vPos y w hPos ul_rest
+    (bl_rest, bl_tags) = mondrian x h vPos h ur_rest
+    (br_rest, br_tags) = mondrian vPos hPos w h bl_rest
     -- cut vertically to get L and R halves
     (vSplitPt, vs_rest) = vSplit x w rs
     (l_rest, left) = mondrian x y vSplitPt h vs_rest
-    (r_rest, right) = mondrian vSplitPt y (w-vSplitPt) h l_rest
+    (r_rest, right) = mondrian vSplitPt y w h l_rest
     -- cut horizontally to get T and B halves
     (hSplitPt, hs_rest) = hSplit y h rs 
     (top_rest, top) = mondrian x y w hPos hs_rest
-    (bottom_rest, bottom) = mondrian x hPos w (h-hSplitPt) top_rest
+    (bottom_rest, bottom) = mondrian x hPos w h top_rest
    
 
 -- Returns a boolean to determine if region should be split
@@ -122,8 +122,8 @@ goodSplit region (r:rs)
 vSplit :: Int -> Int -> [Float] -> (Int, [Float])
 vSplit x w (r:rs) =  (randomInt lowerBound (round (fromIntegral upperBound * 1.5)) r, rs)
   where
-    lowerBound = round (fromIntegral (w-x) * 0.33)
-    upperBound = round (fromIntegral (w-x) * 0.67)
+    lowerBound = round (fromIntegral (w) * 0.33)
+    upperBound = round (fromIntegral (w) * 0.67)
 
 
 -- Randomly selects a position between 33% and 67% of the region to split 
@@ -136,8 +136,8 @@ vSplit x w (r:rs) =  (randomInt lowerBound (round (fromIntegral upperBound * 1.5
 hSplit :: Int -> Int -> [Float] -> (Int, [Float])
 hSplit y h (r:rs) = (randomInt lowerBound (round (fromIntegral upperBound * 1.5)) r, rs)
   where 
-    lowerBound = round (fromIntegral (h-y) * 0.33)
-    upperBound = round (fromIntegral (h-y) * 0.67)
+    lowerBound = round (fromIntegral (h) * 0.33)
+    upperBound = round (fromIntegral (h) * 0.67)
 
 
 -- split into 4 regions
