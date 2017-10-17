@@ -52,9 +52,9 @@ mondrian x y w h (r:s:t:rs)
         | w > half_Inital_Width && h > half_Initial_Height     = (gft_rest, ul_tags ++ ur_tags ++ bl_tags ++ br_tags)
         | w > half_Inital_Width                                = (v_rest, left ++ right)
         | h > half_Initial_Height                              = (h_rest, top ++ bottom)
-        | w > 120 && h > 120 && vGood == True && hGood == True = (gft2_rest, ul_t ++ ur_t ++ bl_t ++ br_t)
-        | w > 120 && vGood == True                             = (v_rs, l_tag ++ r_tag)
-        | h > 120 && hGood == True                             = (h_rs, t_tag ++ b_tag) 
+        | w > 20 && h > 20 && vGood == True && hGood == True   = (gft2_rest, ul_t ++ ur_t ++ bl_t ++ br_t)
+        | w > 20 && vGood == True                              = (v_rs, l_tag ++ r_tag)
+        | h > 20 && hGood == True                              = (h_rs, t_tag ++ b_tag) 
         | otherwise                                            = 
                                                                  (rs, 
                                                                  "<rect x=" ++ (show x) ++ 
@@ -62,7 +62,11 @@ mondrian x y w h (r:s:t:rs)
                                                                  " width=" ++ (show w) ++ 
                                                                  " height=" ++ (show h) ++ 
                                                                  " stroke=\"Black\"" ++
-                                                                 " fill =\"rgb(" ++ (colour r s t)  ++ ")\" />\n")                                      
+                                                                 " fill =\"rgb(" ++ (colourArea x y r s t)  ++ ")\" />\n")
+                                                                 {- " fill=\"rgb(" ++ (show (round (r * 255))) ++ "," ++
+                                                                 (show (round (s * 255))) ++ "," ++
+                                                                 (show (round (t * 255))) ++ ")\" />\n")  -}
+                                                                                                                
         where
                 half_Inital_Width       = div width 2
                 half_Initial_Height     = div height 2
@@ -77,32 +81,32 @@ mondrian x y w h (r:s:t:rs)
                 (h_rs, t_tag, b_tag)    = genTBTags x y w h hrs_rest
         
 
--- Returns 4 tags when splitting a rectangle in both directions as well as the list of remaining random floats
+-- Returns 4 tags when splitting in both directions as well as the list of remaining random floats
 genFourTags :: Int -> Int -> Int -> Int -> [Float] -> ([Float], String, String, String, String)
 genFourTags x y w h rs = (br_rs, ul_tag, ur_tag, bl_tag, br_tag)
         where
                 (vPos, hPos, rest) = twoSplitPositions x y w h rs
-                (ul_rs, ul_tag)    = mondrian x y (vPos - x) (hPos - y) rest
-                (ur_rs, ur_tag)    = mondrian vPos y ((x + w) - vPos) (hPos - y) ul_rs
-                (bl_rs, bl_tag)    = mondrian x hPos (vPos - x) ((y + h) - hPos) ur_rs
-                (br_rs, br_tag)    = mondrian vPos hPos ((x + w) - vPos) ((y + h) - hPos) bl_rs
+                (ul_rs, ul_tag)    = mondrian x y (vPos-x) (hPos-y) rest
+                (ur_rs, ur_tag)    = mondrian vPos y ((x+w)-vPos) (hPos-y) ul_rs
+                (bl_rs, bl_tag)    = mondrian x hPos (vPos-x) ((y+h)-hPos) ur_rs
+                (br_rs, br_tag)    = mondrian vPos hPos ((x+w)-vPos) ((y+h)-hPos) bl_rs
 
 -- returns 2 tags for the left and right rectangle when splitting vertically
 genLRTags ::  Int -> Int -> Int -> Int -> [Float] -> ([Float], String, String)
 genLRTags x y w h rs = (r_rest, left, right)
         where
                 (splitPtX, vs_rest)  = splitPosition x w rs
-                (l_rest, left)       = mondrian x y (splitPtX - x) h vs_rest
-                (r_rest, right)      = mondrian splitPtX y ((x + w) - splitPtX) h l_rest   
+                (l_rest, left)       = mondrian x y (splitPtX-x) h vs_rest
+                (r_rest, right)      = mondrian splitPtX y ((x+w)-splitPtX) h l_rest   
 
  -- returns 2 tags for the top and bottom rectangles when splitting horizontally 
 genTBTags ::  Int -> Int -> Int -> Int -> [Float] -> ([Float], String, String)
 genTBTags x y w h rs = (b_rest, top, bottom)
         where
                 (splitPtY, hs_rest) = splitPosition y h rs
-                (t_rest, top)       = mondrian x y w (splitPtY - y) hs_rest
-                (b_rest, bottom)    = mondrian x splitPtY w ((y + h) - splitPtY) t_rest
-
+                (t_rest, top)       = mondrian x y w (splitPtY-y) hs_rest
+                (b_rest, bottom)    = mondrian x splitPtY w ((y+h)-splitPtY) t_rest
+                
 
  
 -- returns 2 randomly chosen split points, one for the vertical and one for the horizontal, that will be used
@@ -117,7 +121,7 @@ twoSplitPositions x y w h rs = (vPt, hPt, h_list)
 splitPosition :: Int -> Int -> [Float] -> (Int, [Float])
 splitPosition iCoord size (r:rs) =  (randomInt lowerBound upperBound r, rs)
         where
-                third      = round (fromIntegral (size) * 0.33)
+                third      = round (fromIntegral (size) * 0.20)
                 lowerBound = iCoord + third
                 upperBound = iCoord + (2 * third)
 
@@ -128,17 +132,33 @@ isgoodSplit region (r:rs)
         | otherwise        = (False, rs)
         where 
                 high       = round (1.5 * (fromIntegral (region)) )
-                low        = 120
+                low        = 20
                 randInt    = randomInt low high r
 
--- returns a string corrpesponding to a colour. The colour of the rectangle is determined by random
-colour :: Float -> Float -> Float -> String
-colour r g b
-        | r < 0.0833 = "255,0,0" -- red
-        | r < 0.1667 = "135,206,250" -- sky blue
-        | r < 0.25   = "255,255,0" -- yellow
-        | otherwise  = "255,255,255"
-  
+-- colours the area by quadrant. Starting from the top left and going clockwise the quadrants will be
+-- coloured in different intensities of red, green, yellow, purple
+colourArea :: Int -> Int -> Float -> Float -> Float -> String
+colourArea x y r s t
+        | topLeft     = show (round (r*255)) ++ ",0,0"
+        | topRight    = "0," ++ show (round (r*255)) ++ ",0"
+        | bottomLeft   = "0,0," ++ show (round (r*255))
+        | bottomRight = "255," ++ show (round ( (yellow s) * 255)) ++ ",0"
+        where
+                halfW       = div width 2
+                halfH       = div height 2
+                topLeft     = x <= halfW && y <= halfH
+                topRight    = x >  halfW && y <= halfH
+                bottomLeft  = x <= halfW && y >  halfH
+                bottomRight = x >  halfW && y >  halfH
+               
+
+-- determines if the value of s is the correct range to produe a yellow hue. 
+-- If not generate a new value for s that will be in range
+yellow :: Float -> Float
+yellow s 
+        | (255 - (s * 255) ) > 95 = fromIntegral (div 255 (randomInt (255 - 95) 255 s) )
+        | otherwise      =  s
+        
 -- The main program which generates and outputs mondrian.html.
 --
 main :: IO ()
@@ -157,6 +177,6 @@ main = do
       image = snd (mondrian 0 0 width height randomValues)
       suffix = "</svg>\n</html>"
 
-  writeFile "mondrian.html" (prefix ++ image ++ suffix)
+  writeFile "mondrianBonus.html" (prefix ++ image ++ suffix)
 
   
